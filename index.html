@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Carousel Generator Pro - Fixed Toolbar</title>
+    
+    <!-- Library Utama -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    
+    <!-- Editor Quill -->
+    <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+    <script src="https://cdn.quilljs.com/1.3.6/quill.min.js"></script>
+
+    <!-- Font Open Sans -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            font-family: 'Open Sans', sans-serif;
+            background: #f3f4f6;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* ===================== EDITOR STYLING ===================== */
+        .ql-container {
+            font-family: 'Open Sans', sans-serif;
+            font-size: 18px;
+            border: none;
+        }
+        .ql-toolbar {
+            border: none;
+            background: #f8fafc;
+            border-bottom: 1px solid #e2e8f0;
+            border-radius: 16px 16px 0 0;
+            display: flex;
+            flex-wrap: wrap; /* Agar tombol turun ke bawah jika layar sempit */
+            gap: 5px;
+            padding: 12px;
+        }
+        .ql-editor {
+            padding: 20px;
+            min-height: 180px;
+            line-height: 1.6;
+            font-size: 18px;
+        }
+        
+        /* Perbaikan Tampilan Tombol di Mobile */
+        .ql-formats {
+            margin-right: 8px !important;
+        }
+        button.ql-align, button.ql-bold, button.ql-italic {
+            width: 30px !important;
+            height: 30px !important;
+        }
+
+        /* ===================== PREVIEW CARD ===================== */
+        .preview-card {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+            overflow: hidden;
+            border: 1px solid #e5e7eb;
+        }
+        
+        .canvas-wrapper {
+            position: relative;
+            width: 100%;
+            padding-bottom: 100%; /* Rasio 1:1 */
+            background: white;
+            overflow: hidden;
+        }
+
+        .canvas-inner {
+            position: absolute;
+            top: 0; 
+            left: 0;
+            width: 1080px;
+            height: 1080px;
+            transform-origin: top left;
+            transform: scale(0.5); 
+            background: white;
+        }
+
+        /* Responsif Skala Preview */
+        @media (max-width: 1024px) { .canvas-inner { transform: scale(0.4); } }
+        @media (max-width: 768px)  { .canvas-inner { transform: scale(0.45); } }
+        @media (max-width: 480px)  { .canvas-inner { transform: scale(0.9); } }
+
+        /* ===================== SLIDE LAYOUT ===================== */
+        .slide-header {
+            position: absolute;
+            top: 80px;
+            left: 100px;
+            z-index: 10;
+        }
+        
+        .logo img {
+            max-height: 150px;
+            object-fit: contain;
+        }
+
+        .slide-content {
+            position: absolute;
+            top: 280px;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            display: flex;
+            align-items: flex-start;
+            justify-content: center;
+            padding: 0 100px;
+            box-sizing: border-box;
+        }
+
+        /* ===================== TEXT STYLING ===================== */
+        .rendered-text {
+            width: 100%;
+            font-size: 38px;
+            color: #000;
+            text-align: center; /* Default */
+            line-height: 1.4;
+            word-break: break-word;
+        }
+
+        /* Alignment Fix CSS */
+        .rendered-text .ql-align-center { text-align: center !important; }
+        .rendered-text .ql-align-left { text-align: left !important; }
+        .rendered-text .ql-align-right { text-align: right !important; }
+
+        /* Font Size Mapping */
+        .ql-size-28px, .rendered-text .ql-size-28px { font-size: 28px !important; }
+        .ql-size-40px, .rendered-text .ql-size-40px { font-size: 40px !important; }
+        .ql-size-56px, .rendered-text .ql-size-56px { font-size: 56px !important; }
+        .ql-size-72px, .rendered-text .ql-size-72px { font-size: 72px !important; }
+
+/* ===================== HIGHLIGHT BOX PRO ===================== */
+.rendered-text span[style*="background-color"] {
+
+    display: inline-block;
+
+    padding: 10px 16px;
+
+    line-height: 1.2;
+
+    border-radius: 10px;
+
+    vertical-align: baseline;
+
+    box-decoration-break: clone;
+    -webkit-box-decoration-break: clone;
+
+}
+
+/* supaya highlight tetap rapi jika multi-line */
+.rendered-text span[style*="background-color"] br{
+    display:none;
+}
+    </style>
+</head>
+
+<body class="p-4 md:p-8">
+
+    <!-- Header Aplikasi -->
+    <div class="max-w-6xl mx-auto mb-6">
+        <div class="bg-white p-5 rounded-2xl shadow-md border border-gray-100 flex flex-col sm:flex-row justify-between items-center gap-4">
+            <div>
+                <h1 class="text-2xl font-extrabold text-gray-900">Carousel Generator PRO</h1>
+                <p class="text-gray-500 text-sm mt-1">Toolbar Lengkap • Mobile Friendly</p>
+            </div>
+            <button onclick="addSlide()" class="w-full sm:w-auto bg-black hover:bg-gray-800 text-white py-3 px-6 rounded-xl font-bold transition flex items-center justify-center gap-2 shadow-lg">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
+                Tambah Slide
+            </button>
+        </div>
+    </div>
+
+    <!-- Area Slide -->
+    <div id="slidesContainer" class="max-w-6xl mx-auto space-y-6"></div>
+
+    <script>
+        // Register Custom Font Sizes
+        const Size = Quill.import('attributors/style/size');
+        Size.whitelist = ['28px', '40px', '56px', '72px'];
+        Quill.register(Size, true);
+
+        let slideCount = 0;
+        const quills = {};
+        const logoUrl = 'https://i.imgur.com/NXjhTOp.png';
+
+        window.onload = () => { addSlide(); };
+
+        function addSlide() {
+            slideCount++;
+            const id = slideCount;
+            const container = document.getElementById('slidesContainer');
+
+            const div = document.createElement('div');
+            div.className = "block lg:flex gap-6 bg-white p-4 md:p-6 rounded-2xl border border-gray-200 shadow-sm transition hover:shadow-md";
+            div.id = `slide-block-${id}`;
+
+            // TEMPLATE DENGAN TOOLBAR HTML LANGSUNG
+            div.innerHTML = `
+                <!-- Panel Editor -->
+                <div class="w-full lg:w-1/2 bg-gray-50 rounded-xl overflow-hidden mb-4 lg:mb-0 flex flex-col relative border border-gray-100">
+                    
+                    <!-- Tombol Kontrol Admin -->
+                    <div class="absolute top-2 right-2 z-20 flex gap-1">
+                        <button onclick="moveSlide(${id}, -1)" class="bg-white border px-2 py-1 rounded text-xs font-bold text-gray-500 hover:bg-gray-100" title="Geser Atas">▲</button>
+                        <button onclick="moveSlide(${id}, 1)" class="bg-white border px-2 py-1 rounded text-xs font-bold text-gray-500 hover:bg-gray-100" title="Geser Bawah">▼</button>
+                        <button onclick="removeSlide(${id})" class="bg-red-50 border px-2 py-1 rounded text-xs font-bold text-red-500 hover:bg-red-100" title="Hapus">✕</button>
+                    </div>
+
+                    <!-- TOOLBAR HTML (Ditempel manual agar pasti jalan) -->
+                    <div id="toolbar-${id}" class="ql-toolbar ql-snow">
+                        <span class="ql-formats">
+                            <button class="ql-bold" title="Tebal"></button>
+                            <button class="ql-italic" title="Miring"></button>
+                            <button class="ql-underline" title="Garis Bawah"></button>
+                        </span>
+                        <span class="ql-formats">
+                            <select class="ql-size">
+                                <option value="28px">28</option>
+                                <option value="40px" selected>40</option>
+                                <option value="56px">56</option>
+                                <option value="72px">72</option>
+                            </select>
+                        </span>
+                        <span class="ql-formats">
+                            <select class="ql-color" title="Warna Teks"></select>
+                            <select class="ql-background" title="Warna Highlight"></select>
+                        </span>
+                        <span class="ql-formats">
+                            <!-- Alignment Buttons -->
+                            <button class="ql-align" value="" title="Rata Kiri"></button>
+                            <button class="ql-align" value="center" title="Rata Tengah"></button>
+                            <button class="ql-align" value="right" title="Rata Kanan"></button>
+                        </span>
+                    </div>
+
+                    <!-- Area Editor -->
+                    <div id="editor-${id}" class="flex-1 bg-white text-gray-800"></div>
+                </div>
+
+                <!-- Panel Preview -->
+                <div class="w-full lg:w-1/2 flex flex-col items-center">
+                    <div class="preview-card w-full">
+                        <div class="canvas-wrapper">
+                            <div id="canvas-${id}" class="canvas-inner">
+                                <div class="slide-header">
+                                    <div class="logo">
+                                        <img src="${logoUrl}">
+                                    </div>
+                                </div>
+                                <div class="slide-content">
+                                    <div id="content-${id}" class="rendered-text"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <button onclick="downloadSlide(${id})" class="mt-4 w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg font-bold shadow-md transition transform hover:scale-[1.01]">
+                        Download Slide ${id}
+                    </button>
+                </div>
+            `;
+
+            container.appendChild(div);
+
+            // INISIALISASI QUILL HANYA MENUNJUK KE ID TOOLBAR YANG SUDAH ADA
+            quills[id] = new Quill(`#editor-${id}`, {
+                theme: 'snow',
+                modules: {
+                    toolbar: `#toolbar-${id}` // Menghubungkan ke toolbar di atas
+                }
+            });
+
+            // Sync Editor ke Preview
+            quills[id].on('text-change', () => {
+                const html = quills[id].root.innerHTML;
+                document.getElementById(`content-${id}`).innerHTML = html;
+            });
+        }
+
+        function removeSlide(id) {
+            const block = document.getElementById(`slide-block-${id}`);
+            if (block) block.remove();
+        }
+
+        function moveSlide(id, direction) {
+            const block = document.getElementById(`slide-block-${id}`);
+            const container = document.getElementById('slidesContainer');
+            
+            if (direction === -1 && block.previousElementSibling) {
+                container.insertBefore(block, block.previousElementSibling);
+            } else if (direction === 1 && block.nextElementSibling) {
+                container.insertBefore(block.nextElementSibling, block);
+            }
+        }
+
+        async function downloadSlide(id) {
+            const canvasElement = document.getElementById(`canvas-${id}`);
+            const clone = canvasElement.cloneNode(true);
+            
+            clone.style.transform = 'none';
+            clone.style.position = 'absolute';
+            clone.style.left = '-9999px';
+            clone.style.top = '0';
+            clone.style.width = '1080px';
+            clone.style.height = '1080px';
+            
+            document.body.appendChild(clone);
+
+            try {
+                const canvas = await html2canvas(clone, {
+                    scale: 1,
+                    useCORS: true,
+                    allowTaint: true,
+                    backgroundColor: '#ffffff'
+                });
+
+                const link = document.createElement('a');
+                link.download = `slide-${id}.png`;
+                link.href = canvas.toDataURL('image/png', 1.0);
+                link.click();
+            } catch (error) {
+                alert("Gagal download. Coba lagi.");
+            } finally {
+                document.body.removeChild(clone);
+            }
+        }
+    </script>
+</body>
+</html>
