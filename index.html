@@ -124,15 +124,19 @@
 
         /* ===================== HIGHLIGHT BOX PRECISE ===================== */
         /* Styling untuk background span (highlight) */
-        .rendered-text span[style*="background"] {
-            display: inline;
-            padding: 6px 14px;
-            line-height: 1.5;
-            border-radius: 8px;
-            vertical-align: baseline;
-            box-decoration-break: clone;
-            -webkit-box-decoration-break: clone;
-        }
+.rendered-text span[style*="background"] {
+    display: inline;
+    padding: 10px 16px; /* tambah ruang atas bawah */
+    line-height: 1.8;   /* bikin kotak lebih lega */
+    border-radius: 10px;
+
+    /* ini penting biar gak nanggung */
+    box-decoration-break: clone;
+    -webkit-box-decoration-break: clone;
+
+    /* ini bikin posisi kotak lebih turun sedikit biar balance */
+    vertical-align: middle;
+}
 
         /* ===================== FONT SIZE MAPPING ===================== */
         .ql-size-28px, .rendered-text .ql-size-28px { font-size: 28px !important; }
