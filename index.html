@@ -1,154 +1,473 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Carousel Pixel Perfect</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Carousel Generator Pro</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    
+    <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+    <script src="https://cdn.quilljs.com/1.3.6/quill.min.js"></script>
 
-<script src="https://cdn.tailwindcss.com"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
 
-<link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
-<script src="https://cdn.quilljs.com/1.3.6/quill.min.js"></script>
+    <style>
+        body {
+            font-family: 'Open Sans', sans-serif;
+            background: #f3f4f6;
+            -webkit-font-smoothing: antialiased;
+        }
 
-<style>
-body { font-family: sans-serif; background:#f3f4f6; }
+        /* ===================== EDITOR STYLING ===================== */
+        .ql-container {
+            font-family: 'Open Sans', sans-serif;
+            font-size: 18px;
+            border: none;
+        }
+        .ql-toolbar {
+            border: none;
+            background: #f8fafc;
+            border-bottom: 1px solid #e2e8f0;
+            border-radius: 16px 16px 0 0;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+            padding: 12px;
+        }
+        .ql-editor {
+            padding: 20px;
+            min-height: 180px;
+            line-height: 1.6;
+            font-size: 18px;
+        }
+        
+        .ql-formats { margin-right: 8px !important; }
+        button.ql-align, button.ql-bold, button.ql-italic {
+            width: 30px !important;
+            height: 30px !important;
+        }
 
-/* CANVAS */
-.canvas-wrapper { width:100%; padding-bottom:100%; position:relative; }
-.canvas-inner {
-    position:absolute;
-    width:1080px;
-    height:1080px;
-    transform-origin:top left;
-    background:#fff;
+        /* ===================== PREVIEW CARD ===================== */
+        .preview-card {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+            overflow: hidden;
+            border: 1px solid #e5e7eb;
+        }
+        
+        .canvas-wrapper {
+            position: relative;
+            width: 100%;
+            padding-bottom: 100%;
+            background: white;
+            overflow: hidden;
+        }
+
+        .canvas-inner {
+            position: absolute;
+            top: 0; 
+            left: 0;
+            width: 1080px;
+            height: 1080px;
+            transform-origin: top left;
+            background: white;
+        }
+
+        /* ===================== SLIDE LAYOUT ===================== */
+        .slide-header {
+            position: absolute;
+            top: 80px;
+            left: 100px;
+            z-index: 10;
+        }
+        
+        .logo img {
+            max-height: 150px;
+            object-fit: contain;
+        }
+
+        .slide-content {
+            position: absolute;
+            top: 280px;
+            left: 0;
+            right: 0;
+            bottom: 80px;
+            display: flex;
+            align-items: flex-start;
+            justify-content: center; /* Pusatkan blok teks secara horizontal */
+            padding: 0 100px;
+            box-sizing: border-box;
+            overflow: hidden;
+        }
+
+        /* ===================== TEXT STYLING ===================== */
+        .rendered-text {
+            width: 100%;
+            font-size: 38px;
+            color: #000;
+            /* HAPUS text-align: center di sini, biarkan Quill mengontrol via inline style */
+            line-height: 1.4;
+            word-break: break-word;
+            max-height: 100%;
+        }
+
+        /* Pastikan tag P mewarisi lebar penuh */
+        .rendered-text p {
+            margin: 0 0 15px 0;
+            width: 100%;
+        }
+
+        /* ===================== HIGHLIGHT BOX PRECISE ===================== */
+        /* Styling untuk background span (highlight) */
+.rendered-text span[style*="background"] {
+    display: inline-block; /* 🔥 ini kunci utama */
+    padding: 8px 14px;
+    line-height: 1.4;
+    border-radius: 8px;
+
+    /* matikan yang bikin html2canvas error */
+    box-decoration-break: unset;
+    -webkit-box-decoration-break: unset;
+
+    vertical-align: baseline;
 }
-
-/* CONTENT */
-.slide-content {
-    position:absolute;
-    top:200px;
-    left:80px;
-    right:80px;
-    bottom:80px;
-    display:flex;
-    justify-content:center;
-    align-items:flex-start;
+.rendered-text span[style*="background"] {
+    white-space: pre-wrap;
+    word-break: break-word;
 }
+        /* ===================== FONT SIZE MAPPING ===================== */
+        .ql-size-28px, .rendered-text .ql-size-28px { font-size: 28px !important; }
+        .ql-size-40px, .rendered-text .ql-size-40px { font-size: 40px !important; }
+        .ql-size-56px, .rendered-text .ql-size-56px { font-size: 56px !important; }
+        .ql-size-72px, .rendered-text .ql-size-72px { font-size: 72px !important; }
 
-.rendered-text {
-    font-size:40px;
-    line-height:1.4;
-    width:100%;
-}
+        /* ===================== RESPONSIVE SCALE ===================== */
+        @media (min-width: 1024px) { .canvas-inner { transform: scale(0.5); } }
+        @media (max-width: 1023px) and (min-width: 768px) { .canvas-inner { transform: scale(0.4); } }
+        @media (max-width: 767px) { .canvas-inner { transform: scale(0.35); } }
 
-/* 🔥 PIXEL PERFECT HIGHLIGHT */
-.hl {
-    display:inline-block;
-    padding:10px 16px;
-    border-radius:10px;
-    line-height:1.3;
-    white-space:pre-wrap;
-    word-break:break-word;
-}
-
-/* RESPONSIVE SCALE */
-@media (min-width:1024px){
-    .canvas-inner { transform:scale(0.5); }
-}
-</style>
+        /* ===================== BUTTONS ===================== */
+        .download-all-btn {
+            background: linear-gradient(135deg, #059669 0%, #047857 100%);
+            transition: all 0.3s ease;
+        }
+        .download-all-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(5, 150, 105, 0.4);
+        }
+    </style>
 </head>
 
-<body class="p-6">
+<body class="p-4 md:p-8">
 
-<div id="editor"></div>
-
-<div class="mt-6 canvas-wrapper">
-    <div id="canvas" class="canvas-inner">
-        <div class="slide-content">
-            <div id="preview" class="rendered-text"></div>
+    <!-- Header Aplikasi -->
+    <div class="max-w-6xl mx-auto mb-6">
+        <div class="bg-white p-5 rounded-2xl shadow-md border border-gray-100 flex flex-col gap-4">
+            <div class="flex flex-col sm:flex-row justify-between items-center gap-4">
+                <div>
+                    <h1 class="text-2xl font-extrabold text-gray-900">Carousel Generator PRO</h1>
+                    <p class="text-gray-500 text-sm mt-1">Toolbar Lengkap • Mobile Friendly</p>
+                </div>
+                <div class="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+                    <button onclick="downloadAllSlides()" id="downloadAllBtn" class="download-all-btn w-full sm:w-auto text-white py-3 px-6 rounded-xl font-bold flex items-center justify-center gap-2 shadow-lg">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                        </svg>
+                        Download Semua Slide
+                    </button>
+                    <button onclick="addSlide()" class="w-full sm:w-auto bg-black hover:bg-gray-800 text-white py-3 px-6 rounded-xl font-bold transition flex items-center justify-center gap-2 shadow-lg">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                        </svg>
+                        Tambah Slide
+                    </button>
+                </div>
+            </div>
         </div>
     </div>
-</div>
 
-<button onclick="download()" class="mt-6 bg-black text-white px-6 py-3 rounded">
-Download
-</button>
+    <!-- Area Slide -->
+    <div id="slidesContainer" class="max-w-6xl mx-auto space-y-6"></div>
 
-<script>
-const quill = new Quill('#editor', {
-    theme: 'snow',
-    modules: {
-        toolbar: [
-            ['bold','italic'],
-            [{ 'color': [] }, { 'background': [] }],
-            [{ 'align': [] }]
-        ]
-    }
-});
+    <script>
+        // Register Custom Font Sizes
+        const Size = Quill.import('attributors/style/size');
+        Size.whitelist = ['28px', '40px', '56px', '72px'];
+        Quill.register(Size, true);
 
-/* 🔥 TRANSFORM HIGHLIGHT */
-function transformHighlight(html){
-    const temp = document.createElement('div');
-    temp.innerHTML = html;
+        // Register Alignment Style (Penting agar Quill inject style="text-align:...")
+        const Align = Quill.import('attributors/style/align');
+        Quill.register(Align, true);
 
-    temp.querySelectorAll('span').forEach(el => {
-        const bg = el.style.backgroundColor;
-        if(bg){
-            const wrapper = document.createElement('span');
-            wrapper.className = 'hl';
-            wrapper.style.backgroundColor = bg;
-            wrapper.innerHTML = el.innerHTML;
+        let slideCount = 0;
+        const quills = {};
+        const logoUrl = 'https://i.imgur.com/NXjhTOp.png';
 
-            el.replaceWith(wrapper);
+        window.onload = () => { 
+            addSlide(); 
+            updateScaleAll();
+        };
+
+        window.addEventListener('resize', updateScaleAll);
+
+        function updateScaleAll() {
+            document.querySelectorAll('.canvas-wrapper').forEach(wrapper => {
+                const inner = wrapper.querySelector('.canvas-inner');
+                if (inner) {
+                    const wrapperWidth = wrapper.offsetWidth;
+                    const scale = wrapperWidth / 1080;
+                    inner.style.transform = `scale(${scale})`;
+                }
+            });
         }
-    });
 
-    return temp.innerHTML;
-}
+        function addSlide() {
+            slideCount++;
+            const id = slideCount;
+            const container = document.getElementById('slidesContainer');
 
-/* SYNC */
-quill.on('text-change', () => {
-    const raw = quill.root.innerHTML;
-    const fixed = transformHighlight(raw);
-    document.getElementById('preview').innerHTML = fixed;
+            const div = document.createElement('div');
+            div.className = "block lg:flex gap-6 bg-white p-4 md:p-6 rounded-2xl border border-gray-200 shadow-sm transition hover:shadow-md";
+            div.id = `slide-block-${id}`;
+            div.setAttribute('data-slide-id', id);
+
+            div.innerHTML = `
+                <!-- Panel Editor -->
+                <div class="w-full lg:w-1/2 bg-gray-50 rounded-xl overflow-hidden mb-4 lg:mb-0 flex flex-col relative border border-gray-100">
+                    
+                    <!-- Tombol Kontrol -->
+                    <div class="absolute top-2 right-2 z-20 flex gap-1">
+                        <button onclick="moveSlide(${id}, -1)" class="bg-white border px-2 py-1 rounded text-xs font-bold text-gray-500 hover:bg-gray-100" title="Geser Atas">▲</button>
+                        <button onclick="moveSlide(${id}, 1)" class="bg-white border px-2 py-1 rounded text-xs font-bold text-gray-500 hover:bg-gray-100" title="Geser Bawah">▼</button>
+                        <button onclick="removeSlide(${id})" class="bg-red-50 border px-2 py-1 rounded text-xs font-bold text-red-500 hover:bg-red-100" title="Hapus">✕</button>
+                    </div>
+
+                    <!-- TOOLBAR -->
+                    <div id="toolbar-${id}" class="ql-toolbar ql-snow">
+                        <span class="ql-formats">
+                            <button class="ql-bold" title="Tebal"></button>
+                            <button class="ql-italic" title="Miring"></button>
+                            <button class="ql-underline" title="Garis Bawah"></button>
+                        </span>
+                        <span class="ql-formats">
+                            <select class="ql-size">
+                                <option value="28px">28</option>
+                                <option value="40px" selected>40</option>
+                                <option value="56px">56</option>
+                                <option value="72px">72</option>
+                            </select>
+                        </span>
+                        <span class="ql-formats">
+                            <select class="ql-color" title="Warna Teks"></select>
+                            <select class="ql-background" title="Warna Highlight"></select>
+                        </span>
+                        <span class="ql-formats">
+                            <button class="ql-align" value="" title="Rata Kiri"></button>
+                            <button class="ql-align" value="center" title="Rata Tengah"></button>
+                            <button class="ql-align" value="right" title="Rata Kanan"></button>
+                        </span>
+                    </div>
+
+                    <!-- Area Editor -->
+                    <div id="editor-${id}" class="flex-1 bg-white text-gray-800"></div>
+                </div>
+
+                <!-- Panel Preview -->
+                <div class="w-full lg:w-1/2 flex flex-col items-center">
+                    <div class="preview-card w-full">
+                        <div class="canvas-wrapper">
+                            <div id="canvas-${id}" class="canvas-inner">
+                                <div class="slide-header">
+                                    <div class="logo">
+                                        <img src="${logoUrl}" alt="Logo">
+                                    </div>
+                                </div>
+                                <div class="slide-content">
+                                    <div id="content-${id}" class="rendered-text"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <button onclick="downloadSlide(${id})" class="mt-4 w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg font-bold shadow-md transition transform hover:scale-[1.01]">
+                        Download Slide ${id}
+                    </button>
+                </div>
+            `;
+
+            container.appendChild(div);
+
+            // Inisialisasi Quill
+            quills[id] = new Quill(`#editor-${id}`, {
+                theme: 'snow',
+                modules: {
+                    toolbar: `#toolbar-${id}`
+                }
+            });
+
+            // === PERBAIKAN UTAMA: Set default alignment ke Center secara inline ===
+            // Kita gunakan format('align', 'center') agar Quill menulis style="text-align: center"
+            // Ini memastikan html2canvas membaca perintah alignment dengan benar.
+            quills[id].format('align', 'center');
+
+            // Sync Editor ke Preview
+            quills[id].on('text-change', () => {
+                const html = quills[id].root.innerHTML;
+                const contentEl = document.getElementById(`content-${id}`);
+                contentEl.innerHTML = html;
+                autoAdjustFontSize(id);
+            });
+
+            setTimeout(updateScaleAll, 50);
+        }
+
+        function autoAdjustFontSize(id) {
+            const contentEl = document.getElementById(`content-${id}`);
+            const slideContent = contentEl.parentElement;
+            
+            if (!contentEl || !slideContent) return;
+
+            contentEl.style.fontSize = '';
+            
+            let fontSize = 38;
+            const minFontSize = 20;
+            const maxHeight = slideContent.clientHeight;
+
+            while (contentEl.scrollHeight > maxHeight && fontSize > minFontSize) {
+                fontSize -= 2;
+                contentEl.style.fontSize = fontSize + 'px';
+            }
+        }
+
+        function removeSlide(id) {
+            const block = document.getElementById(`slide-block-${id}`);
+            if (block) {
+                block.remove();
+                delete quills[id];
+            }
+        }
+
+        function moveSlide(id, direction) {
+            const block = document.getElementById(`slide-block-${id}`);
+            const container = document.getElementById('slidesContainer');
+            
+            if (direction === -1 && block.previousElementSibling) {
+                container.insertBefore(block, block.previousElementSibling);
+            } else if (direction === 1 && block.nextElementSibling) {
+                container.insertBefore(block.nextElementSibling, block);
+            }
+        }
+
+        async function downloadSlide(id) {
+            const canvasElement = document.getElementById(`canvas-${id}`);
+            if (!canvasElement) return;
+
+const clone = canvasElement.cloneNode(true);
+
+// 🔥 FIX: paksa style highlight di clone agar konsisten
+clone.querySelectorAll('span[style*="background"]').forEach(el => {
+    el.style.display = 'inline-block';
+    el.style.padding = '8px 14px';
+    el.style.lineHeight = '1.4';
+    el.style.borderRadius = '8px';
 });
+            
+            clone.style.transform = 'none';
+            clone.style.position = 'absolute';
+            clone.style.left = '-9999px';
+            clone.style.top = '0';
+            clone.style.width = '1080px';
+            clone.style.height = '1080px';
+            
+            document.body.appendChild(clone);
 
-/* SCALE */
-function updateScale(){
-    const wrapper = document.querySelector('.canvas-wrapper');
-    const inner = document.querySelector('.canvas-inner');
-    const scale = wrapper.offsetWidth / 1080;
-    inner.style.transform = `scale(${scale})`;
-}
-window.addEventListener('resize', updateScale);
-updateScale();
+            try {
+                const canvas = await html2canvas(clone, {
+                    scale: 1,
+                    useCORS: true,
+                    allowTaint: true,
+                    backgroundColor: '#ffffff',
+                    width: 1080,
+                    height: 1080,
+                    windowWidth: 1080,
+                    windowHeight: 1080,
+                    logging: false 
+                });
 
-/* DOWNLOAD */
-async function download(){
-    const original = document.getElementById('canvas');
+                const link = document.createElement('a');
+                link.download = `slide-${id}.png`;
+                link.href = canvas.toDataURL('image/png', 1.0);
+                link.click();
+            } catch (error) {
+                console.error(error);
+                alert("Gagal download. Coba lagi.");
+            } finally {
+                document.body.removeChild(clone);
+            }
+        }
 
-    const clone = original.cloneNode(true);
-    clone.style.transform = 'none';
-    clone.style.position = 'absolute';
-    clone.style.left = '-9999px';
+        async function downloadAllSlides() {
+            const btn = document.getElementById('downloadAllBtn');
+            const originalText = btn.innerHTML;
+            
+            const slideBlocks = document.querySelectorAll('[data-slide-id]');
+            const slideIds = Array.from(slideBlocks).map(block => parseInt(block.getAttribute('data-slide-id')));
 
-    document.body.appendChild(clone);
+            if (slideIds.length === 0) {
+                alert('Tidak ada slide untuk didownload');
+                return;
+            }
 
-    const canvas = await html2canvas(clone, {
-        scale: 2,
-        backgroundColor:'#fff',
-        useCORS:true
-    });
+            btn.innerHTML = `
+                <svg class="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Memproses...
+            `;
+            btn.disabled = true;
 
-    const link = document.createElement('a');
-    link.download = 'slide.png';
-    link.href = canvas.toDataURL();
-    link.click();
+            try {
+                for (let i = 0; i < slideIds.length; i++) {
+                    const id = slideIds[i];
+                    btn.innerHTML = `
+                        <svg class="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Download ${i + 1}/${slideIds.length}
+                    `;
 
-    document.body.removeChild(clone);
-}
-</script>
+                    await downloadSlide(id);
+                    
+                    if (i < slideIds.length - 1) {
+                        await new Promise(resolve => setTimeout(resolve, 500));
+                    }
+                }
 
+                btn.innerHTML = `
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                    </svg>
+                    Selesai!
+                `;
+
+                setTimeout(() => {
+                    btn.innerHTML = originalText;
+                    btn.disabled = false;
+                }, 2000);
+
+            } catch (error) {
+                console.error(error);
+                alert('Terjadi kesalahan saat download');
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }
+        }
+    </script>
 </body>
 </html>
