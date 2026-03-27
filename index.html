@@ -41,7 +41,7 @@
         .ql-editor {
             padding: 20px;
             min-height: 180px;
-            line-height: 1.6;
+            line-height: 1.8; /* Diperbesar agar highlight tidak bertabrakan */
             font-size: 18px;
         }
         
@@ -99,7 +99,7 @@
             bottom: 80px;
             display: flex;
             align-items: flex-start;
-            justify-content: center; /* Pusatkan blok teks secara horizontal */
+            justify-content: center;
             padding: 0 100px;
             box-sizing: border-box;
             overflow: hidden;
@@ -110,36 +110,35 @@
             width: 100%;
             font-size: 38px;
             color: #000;
-            /* HAPUS text-align: center di sini, biarkan Quill mengontrol via inline style */
-            line-height: 1.4;
+            line-height: 2.0; /* Diperbesar signifikan untuk memberi ruang highlight */
             word-break: break-word;
             max-height: 100%;
         }
 
-        /* Pastikan tag P mewarisi lebar penuh */
         .rendered-text p {
-            margin: 0 0 15px 0;
+            margin: 0 0 20px 0; /* Jarak antar paragraf */
             width: 100%;
         }
 
-        /* ===================== HIGHLIGHT BOX PRECISE ===================== */
-        /* Styling untuk background span (highlight) */
-.rendered-text span[style*="background"] {
-    display: inline-block; /* 🔥 ini kunci utama */
-    padding: 8px 14px;
-    line-height: 1.4;
-    border-radius: 8px;
+        /* ===================== HIGHLIGHT BOX PRO FIX ===================== */
+        /* 
+           Menggunakan 'display: inline-block' dan 'vertical-align: middle' 
+           adalah kunci agar background text terlihat profesional dan presisi
+           baik di browser maupun hasil download html2canvas.
+        */
+        .rendered-text span[style*="background"] {
+            display: inline-block;
+            padding: 8px 16px; /* Padding proporsional */
+            line-height: 1.4;  /* Line height ketat di dalam highlight */
+            border-radius: 8px;
+            vertical-align: middle; /* Posisi tegak lurus sempurna */
+            margin: 2px 0; /* Sedikit ruang agar tidak menempel garis atas */
+            
+            /* Memastikan box utuh (tidak terpecah aneh di tengah kata) */
+            box-decoration-break: clone;
+            -webkit-box-decoration-break: clone;
+        }
 
-    /* matikan yang bikin html2canvas error */
-    box-decoration-break: unset;
-    -webkit-box-decoration-break: unset;
-
-    vertical-align: baseline;
-}
-.rendered-text span[style*="background"] {
-    white-space: pre-wrap;
-    word-break: break-word;
-}
         /* ===================== FONT SIZE MAPPING ===================== */
         .ql-size-28px, .rendered-text .ql-size-28px { font-size: 28px !important; }
         .ql-size-40px, .rendered-text .ql-size-40px { font-size: 40px !important; }
@@ -171,7 +170,7 @@
             <div class="flex flex-col sm:flex-row justify-between items-center gap-4">
                 <div>
                     <h1 class="text-2xl font-extrabold text-gray-900">Carousel Generator PRO</h1>
-                    <p class="text-gray-500 text-sm mt-1">Toolbar Lengkap • Mobile Friendly</p>
+                    <p class="text-gray-500 text-sm mt-1">Highlight Presisi • Download Konsisten</p>
                 </div>
                 <div class="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
                     <button onclick="downloadAllSlides()" id="downloadAllBtn" class="download-all-btn w-full sm:w-auto text-white py-3 px-6 rounded-xl font-bold flex items-center justify-center gap-2 shadow-lg">
@@ -200,7 +199,7 @@
         Size.whitelist = ['28px', '40px', '56px', '72px'];
         Quill.register(Size, true);
 
-        // Register Alignment Style (Penting agar Quill inject style="text-align:...")
+        // Register Alignment Style
         const Align = Quill.import('attributors/style/align');
         Quill.register(Align, true);
 
@@ -309,9 +308,6 @@
                 }
             });
 
-            // === PERBAIKAN UTAMA: Set default alignment ke Center secara inline ===
-            // Kita gunakan format('align', 'center') agar Quill menulis style="text-align: center"
-            // Ini memastikan html2canvas membaca perintah alignment dengan benar.
             quills[id].format('align', 'center');
 
             // Sync Editor ke Preview
@@ -366,15 +362,19 @@
             const canvasElement = document.getElementById(`canvas-${id}`);
             if (!canvasElement) return;
 
-const clone = canvasElement.cloneNode(true);
+            const clone = canvasElement.cloneNode(true);
 
-// 🔥 FIX: paksa style highlight di clone agar konsisten
-clone.querySelectorAll('span[style*="background"]').forEach(el => {
-    el.style.display = 'inline-block';
-    el.style.padding = '8px 14px';
-    el.style.lineHeight = '1.4';
-    el.style.borderRadius = '8px';
-});
+            // === PERBAIKAN UTAMA DOWNLOAD ===
+            // Kita paksa style di elemen clone agar html2canvas tidak "menebak" salah
+            clone.querySelectorAll('span[style*="background"]').forEach(el => {
+                el.style.display = 'inline-block';
+                el.style.padding = '8px 16px';
+                el.style.lineHeight = '1.4';
+                el.style.borderRadius = '8px';
+                el.style.verticalAlign = 'middle';
+                el.style.boxDecorationBreak = 'clone';
+                el.style.webkitBoxDecorationBreak = 'clone';
+            });
             
             clone.style.transform = 'none';
             clone.style.position = 'absolute';
